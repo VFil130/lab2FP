@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Список задач</title>
+  <style>
+    body { font-family: sans-serif; }
+    #todo-container { max-width: 600px; margin: 20px auto; padding: 20px; border: 1px solid #ccc; border-radius: 5px; }
+    input, button, select { padding: 8px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; }
+    button { background-color: #4CAF50; color: white; border: none; cursor: pointer; }
+    button:hover { background-color: #3e8e41; }
+    .todo-item { display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #eee; }
+    .todo-item:last-child { border-bottom: none; }
+    .todo-item input[type="checkbox"] { margin-right: 10px; }
+    .todo-item span { flex-grow: 1; }
+    .todo-item button { margin-left: 10px; background-color: #f44336; }
+    .todo-item button:hover { background-color: #da190b; }
+    .completed { text-decoration: line-through; color: #888; }
+  </style>
+</head>
+<body>
+  <div id="todo-container">
+    <h1>Список задач</h1>
+    <div>
+      <input type="text" id="new-task" placeholder="Добавить задачу">
+      <button id="add-button">Добавить</button>
+    </div>
+    <div>
+      <label for="filter">Фильтр:</label>
+      <select id="filter">
+        <option value="all">Все</option>
+        <option value="active">Невыполненные</option>
+        <option value="completed">Выполненные</option>
+      </select>
+    </div>
+    <div id="todo-list"></div>
+  </div>
+
+  <script>
+    const $ = (selector) => document.querySelector(selector);
+
+    // Функции для работы с задачами
+    const addTask = (tasks, text) => [...tasks, { id: Date.now(), text, completed: false }];
+    const toggleComplete = (tasks, id) => tasks.map(task => task.id === id ? { ...task, completed: !task.completed } : task);
+    const deleteTask = (tasks, id) => tasks.filter(task => task.id !== id);
+    const filterTasks = (tasks, filter) => {
+        switch (filter) {
+            case 'active': return tasks.filter(task => !task.completed);
+            case 'completed': return tasks.filter(task => task.completed);
+            default: return tasks;
+        }
+    };
+
+    // Функция для отрисовки одной задачи
+    const renderTask = (task) => `
+      <div class="todo-item">
+        <input type="checkbox" ${task.completed ? 'checked' : ''} data-id="${task.id}">
+        <span>${task.text}</span>
+        <button data-id="${task.id}">Удалить</button>
+      </div>
+    `;
+
+    // Функция для отрисовки списка задач
+    const renderTasks = (tasks, filter = 'all') => {
+      const filteredTasks = filterTasks(tasks, filter);
+      $('#todo-list').innerHTML = filteredTasks.map(renderTask).join(''); // Используем .map() и .join('') для генерации HTML
+    };
+
+    // Общая логика и обработчики событий
+    let tasks = []; // Список задач - начинаем с пустого списка
+
+    // Функция для обновления списка задач
+    const update = () => {
+      const filterValue = $('#filter').value;
+      renderTasks(tasks, filterValue);
+    };
+
+    // Обработчики событий
+    $('#add-button').addEventListener('click', () => {
+      const text = $('#new-task').value.trim();
+      if (text) {
+        tasks = addTask(tasks, text);
+        $('#new-task').value = '';
+        update(); // Обновляем
+      }
+    });
+
+    $('#filter').addEventListener('change', update); // Просто обновляем при изменении фильтра
+
+    $('#todo-list').addEventListener('click', (event) => {
+      const id = parseInt(event.target.dataset.id);
+      if (event.target.tagName === 'BUTTON' && id) {
+        tasks = deleteTask(tasks, id);
+        update();
+      } else if (event.target.type === 'checkbox' && id) {
+        tasks = toggleComplete(tasks, id);
+        update();
+      }
+    });
+
+    update(); // Начальная отрисовка
+  </script>
+</body>
+</html>
